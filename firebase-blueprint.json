@@ -1,0 +1,100 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Syllabus": {
+      "title": "Syllabus",
+      "description": "Metadata about an uploaded syllabus",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "examDate": { "type": "string", "format": "date" },
+        "dailyHours": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "examDate", "dailyHours"]
+    },
+    "Topic": {
+      "title": "Topic",
+      "description": "A topic or chapter extracted from the syllabus",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "subject": { "type": "string" },
+        "difficulty": { "type": "string", "enum": ["Easy", "Medium", "Hard"] },
+        "estimatedHours": { "type": "number" },
+        "order": { "type": "number" }
+      },
+      "required": ["id", "title", "difficulty", "estimatedHours"]
+    },
+    "StudyPlan": {
+      "title": "StudyPlan",
+      "description": "The generated study schedule",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "schedule": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": { "type": "string", "format": "date" },
+              "topics": { "type": "array", "items": { "type": "string" } },
+              "isRevision": { "type": "boolean" }
+            }
+          }
+        }
+      },
+      "required": ["id", "startDate", "endDate", "schedule"]
+    },
+    "Progress": {
+      "title": "Progress",
+      "description": "Tracking completion of topics",
+      "type": "object",
+      "properties": {
+        "topicId": { "type": "string" },
+        "status": { "type": "string", "enum": ["Not Started", "In Progress", "Completed"] },
+        "completedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["topicId", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile"
+    },
+    "/users/{userId}/syllabi/{syllabusId}": {
+      "schema": "Syllabus",
+      "description": "Uploaded syllabi"
+    },
+    "/users/{userId}/syllabi/{syllabusId}/topics/{topicId}": {
+      "schema": "Topic",
+      "description": "Extracted topics"
+    },
+    "/users/{userId}/syllabi/{syllabusId}/plans/{planId}": {
+      "schema": "StudyPlan",
+      "description": "Generated study plans"
+    },
+    "/users/{userId}/syllabi/{syllabusId}/progress/{progressId}": {
+      "schema": "Progress",
+      "description": "Topic progress tracking"
+    }
+  }
+}

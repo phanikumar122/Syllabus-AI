@@ -1,0 +1,138 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: /users/{userId}
+    // Fields:
+    //   - uid: string (required)
+    //   - email: string (required)
+    //   - displayName: string (optional)
+    //   - photoURL: string (optional)
+    //   - createdAt: timestamp (optional)
+    //
+    // Collection: /users/{userId}/syllabi/{syllabusId}
+    // Fields:
+    //   - id: string (required)
+    //   - name: string (required)
+    //   - description: string (optional)
+    //   - examDate: string (required, YYYY-MM-DD)
+    //   - dailyHours: number (required)
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: /users/{userId}/syllabi/{syllabusId}/topics/{topicId}
+    // Fields:
+    //   - id: string (required)
+    //   - title: string (required)
+    //   - subject: string (optional)
+    //   - difficulty: string (required, Easy/Medium/Hard)
+    //   - estimatedHours: number (required)
+    //   - order: number (optional)
+    //
+    // Collection: /users/{userId}/syllabi/{syllabusId}/plans/{planId}
+    // Fields:
+    //   - id: string (required)
+    //   - startDate: string (required)
+    //   - endDate: string (required)
+    //   - schedule: list (required)
+    //
+    // Collection: /users/{userId}/syllabi/{syllabusId}/progress/{progressId}
+    // Fields:
+    //   - topicId: string (required)
+    //   - status: string (required, Not Started/In Progress/Completed)
+    //   - completedAt: timestamp (optional)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}$");
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['uid', 'email', 'displayName', 'photoURL', 'createdAt']) &&
+             data.uid == request.auth.uid &&
+             isValidEmail(data.email);
+    }
+
+    function isValidSyllabus(data) {
+      return hasOnlyAllowedFields(['id', 'name', 'description', 'examDate', 'dailyHours', 'status', 'createdAt', 'updatedAt']) &&
+             data.name is string && data.name.size() > 0 &&
+             isValidDateString(data.examDate) &&
+             data.dailyHours is number && data.dailyHours > 0;
+    }
+
+    function isValidTopic(data) {
+      return hasOnlyAllowedFields(['id', 'title', 'subject', 'difficulty', 'estimatedHours', 'order', 'createdAt']) &&
+             data.title is string && data.title.size() > 0 &&
+             data.difficulty in ['Easy', 'Medium', 'Hard'] &&
+             data.estimatedHours is number && data.estimatedHours >= 0;
+    }
+
+    function isValidPlan(data) {
+      return hasOnlyAllowedFields(['id', 'startDate', 'endDate', 'schedule', 'updatedAt']) &&
+             data.schedule is list;
+    }
+
+    function isValidProgress(data) {
+      return hasOnlyAllowedFields(['topicId', 'status', 'completedAt', 'topic_id']) &&
+             data.status in ['Not Started', 'In Progress', 'Completed'];
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId);
+
+      match /syllabi/{syllabusId} {
+        allow read, write: if isOwner(userId);
+
+        match /topics/{topicId} {
+          allow read, write: if isOwner(userId);
+        }
+
+        match /plans/{planId} {
+          allow read, write: if isOwner(userId);
+        }
+
+        match /progress/{progressId} {
+          allow read, write: if isOwner(userId);
+        }
+      }
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
