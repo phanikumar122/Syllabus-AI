@@ -46,7 +46,7 @@ export default function Layout({ children, activeTab, setActiveTab, searchQuery,
   ];
 
   return (
-    <div className="flex h-screen bg-[#020205] text-white font-sans overflow-hidden selection:bg-purple-500/30">
+    <div className="app-shell flex h-screen bg-[#06070d] text-white font-sans overflow-hidden selection:bg-purple-500/30">
       {/* Background Gradient */}
       <div className="fixed inset-0 bg-gradient-to-br from-[#0a0a2a] via-[#020205] to-[#020205] -z-10" />
       <div className="fixed top-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600/10 rounded-full blur-[120px] -z-10 animate-pulse" />
@@ -56,7 +56,7 @@ export default function Layout({ children, activeTab, setActiveTab, searchQuery,
       <motion.aside 
         initial={false}
         animate={{ width: isSidebarOpen ? 280 : 100 }}
-        className="fixed left-4 top-4 bottom-4 z-50 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl flex flex-col shadow-2xl shadow-black/40 overflow-hidden"
+        className="fixed left-4 top-4 bottom-4 z-50 bg-[#10111b]/80 backdrop-blur-2xl border border-white/10 rounded-[28px] flex flex-col shadow-2xl shadow-black/40 overflow-hidden sidebar-shell"
       >
         <div className="p-6 flex items-center justify-center gap-3">
           <motion.div 
@@ -151,7 +151,7 @@ export default function Layout({ children, activeTab, setActiveTab, searchQuery,
       </motion.aside>
 
       {/* Main Content Area */}
-      <main className={`flex-1 flex flex-col h-screen overflow-hidden relative transition-all duration-500 ${isSidebarOpen ? 'pl-[300px]' : 'pl-[120px]'}`}>
+      <main className={`flex-1 flex flex-col h-screen overflow-hidden relative transition-all duration-500 ${isSidebarOpen ? 'pl-[300px]' : 'pl-[120px]'} app-main`}>
         {/* Top Navbar */}
         <header className={`fixed top-4 right-4 z-40 transition-all duration-500 ${
           isSidebarOpen ? 'left-[300px]' : 'left-[120px]'
@@ -201,7 +201,7 @@ export default function Layout({ children, activeTab, setActiveTab, searchQuery,
         </header>
 
         {/* Scrollable Content */}
-        <section className="flex-1 overflow-y-auto custom-scrollbar pt-32 px-10 pb-10">
+        <section className="flex-1 overflow-y-auto custom-scrollbar pt-32 px-10 pb-10 app-scroll-area">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
