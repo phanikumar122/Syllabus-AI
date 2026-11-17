@@ -103,6 +103,35 @@ export function createApi({
     });
     next();
   });
+  app.use("/api", (req, res, next) => {
+    try {
+      const origin = req.headers.origin;
+      res.vary("Origin");
+      if (origin) {
+        const configuredOrigin = new URL(
+          serviceConfig.appUrl || "http://localhost:3000",
+        ).origin;
+        if (
+          origin !== configuredOrigin &&
+          origin !== `${req.protocol}://${req.headers.host}` &&
+          !["http://localhost:3000", "http://127.0.0.1:3000"].includes(origin)
+        )
+          throw failure(403, "Cross-origin requests are not allowed.");
+        res.set("Access-Control-Allow-Origin", origin);
+      }
+      if (req.method === "OPTIONS") {
+        res.set({
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Authorization, Content-Type",
+          "Access-Control-Max-Age": "600",
+        });
+        return res.sendStatus(204);
+      }
+      next();
+    } catch (e) {
+      next(e);
+    }
+  });
   app.get("/api/health", (_req, res) =>
     res.json({
       ok: true,
@@ -144,17 +173,6 @@ export function createApi({
   const limits = new Map();
   app.use("/api", async (req, res, next) => {
     try {
-      const origin = req.headers.origin;
-      const configuredOrigin = new URL(
-        serviceConfig.appUrl || "http://localhost:3000",
-      ).origin;
-      if (
-        origin &&
-        origin !== configuredOrigin &&
-        origin !== `${req.protocol}://${req.headers.host}` &&
-        !["http://localhost:3000", "http://127.0.0.1:3000"].includes(origin)
-      )
-        throw failure(403, "Cross-origin requests are not allowed.");
       let uid;
       try {
         uid = await authenticate(req);

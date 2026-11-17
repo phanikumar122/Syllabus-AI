@@ -20,6 +20,64 @@ const post = (base, path, body, token) =>
     },
     body: JSON.stringify(body),
   });
+test("Firebase-hosted browsers can preflight the API while protected requests still require auth", () => {
+  let authCalls = 0;
+  const origin = "https://study-project.web.app";
+  return withApi(
+    {
+      serviceConfig: { appUrl: origin },
+      authenticate: async () => {
+        authCalls++;
+        throw new Error("missing token");
+      },
+    },
+    async (base) => {
+      const preflight = await fetch(base + "/coach/chat", {
+        method: "OPTIONS",
+        headers: {
+          Origin: origin,
+          "Access-Control-Request-Method": "POST",
+          "Access-Control-Request-Headers": "authorization,content-type",
+        },
+      });
+      assert.equal(preflight.status, 204);
+      assert.equal(authCalls, 0);
+      assert.equal(
+        preflight.headers.get("access-control-allow-origin"),
+        origin,
+      );
+      assert.match(
+        preflight.headers.get("access-control-allow-headers"),
+        /Authorization/i,
+      );
+      assert.match(
+        preflight.headers.get("access-control-allow-methods"),
+        /POST/,
+      );
+      assert.match(preflight.headers.get("vary"), /Origin/);
+      const unauthorized = await fetch(base + "/coach/chat", {
+        method: "POST",
+        headers: { Origin: origin, "Content-Type": "application/json" },
+        body: JSON.stringify({ message: "Help" }),
+      });
+      assert.equal(unauthorized.status, 401);
+      assert.equal(
+        unauthorized.headers.get("access-control-allow-origin"),
+        origin,
+      );
+      const foreign = await fetch(base + "/coach/chat", {
+        method: "OPTIONS",
+        headers: { Origin: "https://foreign.example.com" },
+      });
+      assert.equal(foreign.status, 403);
+      assert.equal(foreign.headers.get("access-control-allow-origin"), null);
+      const health = await fetch(base + "/health", {
+        headers: { Origin: origin },
+      });
+      assert.equal(health.headers.get("access-control-allow-origin"), origin);
+    },
+  );
+});
 test("AI routes refuse unauthenticated requests", () =>
   withApi(
     {

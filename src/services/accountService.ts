@@ -1,4 +1,5 @@
 import { auth } from "../lib/firebase";
+const endpoint = import.meta.env?.VITE_AI_API_URL?.trim() || "/api";
 export interface Services {
   aiConfigured: boolean;
   billingConfigured: boolean;
@@ -35,7 +36,7 @@ export async function accountRequest<T>(
 ): Promise<T> {
   const token = await auth.currentUser?.getIdToken();
   if (!token) throw new Error("Sign in to configure account services.");
-  const response = await fetch(`/api/${path}`, {
+  const response = await fetch(`${endpoint.replace(/\/$/, "")}/${path}`, {
     method: body === undefined ? "GET" : "POST",
     headers: {
       Authorization: `Bearer ${token}`,
