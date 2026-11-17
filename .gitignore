@@ -6,3 +6,8 @@ coverage/
 *.log
 .env*
 !.env.example
+.playwright-cli/
+test-results/
+playwright-report/
+.firebase/
+deploy/runtime.env.yaml

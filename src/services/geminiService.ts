@@ -1,82 +1,98 @@
-import { GoogleGenAI, Type } from "@google/genai";
-
-const API_KEY = process.env.GEMINI_API_KEY;
-if (!API_KEY) {
-  console.warn("[GeminiService] GEMINI_API_KEY is not set. AI features will fail.");
-}
-
-const ai = new GoogleGenAI({ apiKey: API_KEY || "" });
-
-// Use a valid, available Gemini model
-const FLASH_MODEL = "gemini-3-flash-preview";
-
+import { auth } from "../lib/firebase";
+import { validateExtractedTopics } from "../domain/aiValidation";
 export interface ExtractedTopic {
   title: string;
   subject?: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
+  difficulty: "Easy" | "Medium" | "Hard";
   estimatedHours: number;
 }
-
-export async function parseSyllabus(content: string, mimeType: string = 'text/plain'): Promise<ExtractedTopic[]> {
-  const prompt = `
-    Extract all subjects, chapters, and subtopics from the following syllabus file.
-    For each topic, estimate its difficulty (Easy, Medium, Hard) and the number of hours required to master it for an average student.
-    Group them logically. Be comprehensive — extract every topic you can find.
-  `;
-
-  try {
-    const response = await ai.models.generateContent({
-      model: FLASH_MODEL,
-      contents: mimeType !== 'text/plain'
-        ? [{ parts: [{ text: prompt }, { inlineData: { mimeType: mimeType, data: content } }] }]
-        : [{ parts: [{ text: prompt + "\n\nSyllabus Content:\n" + content }] }],
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              subject: { type: Type.STRING },
-              difficulty: { type: Type.STRING, enum: ["Easy", "Medium", "Hard"] },
-              estimatedHours: { type: Type.NUMBER }
-            },
-            required: ["title", "difficulty", "estimatedHours"]
-          }
-        }
-      }
-    });
-
-    let rawText = response.text || "[]";
-    // Strip markdown formatting universally just in case the model hallucinates it
-    rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-    
-    const parsed = JSON.parse(rawText);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (e: any) {
-    console.error("[GeminiService] Failed to parse syllabus response:", e);
-    throw new Error(e.message || "AI Engine failed to process this file format.");
-  }
+export interface ChatMessage {
+  role: "user" | "assistant";
+  text: string;
 }
-
-export async function getSmartNudge(progress: number, daysLeft: number, topicsRemaining: number): Promise<string> {
-  const prompt = `
-    The student has completed ${progress}% of their syllabus.
-    They have ${daysLeft} days left until the exam.
-    There are ${topicsRemaining} topics remaining.
-    Provide a short, motivating, and actionable nudge (max 2 sentences) in a premium SaaS tone (like Linear or Notion).
-    Be direct and specific, not generic.
-  `;
-
-  try {
-    const response = await ai.models.generateContent({
-      model: FLASH_MODEL,
-      contents: prompt
-    });
-    return response.text?.trim() || "You're making great progress — keep the momentum going!";
-  } catch (e) {
-    console.error("[GeminiService] Failed to get smart nudge:", e);
-    return "Keep pushing forward — consistency compounds.";
-  }
+const endpoint = import.meta.env.VITE_AI_API_URL?.trim() || "/api";
+async function callAi<T>(
+  path: string,
+  body: unknown,
+  signal?: AbortSignal,
+): Promise<T> {
+  const token = await auth.currentUser?.getIdToken();
+  const timeout = AbortSignal.timeout(50000);
+  const response = await fetch(`${endpoint.replace(/\/$/, "")}/${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+    signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+  });
+  const result = await response.json().catch(() => {
+    throw new Error(
+      "The AI server is unavailable. Start the backend and check configuration.",
+    );
+  });
+  if (!response.ok) throw new Error(result.error || "AI request failed.");
+  return result as T;
+}
+export async function parseSyllabus(
+  content: string,
+  mimeType = "text/plain",
+  signal?: AbortSignal,
+): Promise<ExtractedTopic[]> {
+  const result = await callAi<{ topics: ExtractedTopic[] }>(
+    "syllabus/parse",
+    { content, mimeType },
+    signal,
+  );
+  return validateExtractedTopics(result.topics) as ExtractedTopic[];
+}
+export async function chatWithCoach(
+  message: string,
+  context: unknown,
+  history: ChatMessage[],
+  signal?: AbortSignal,
+) {
+  const result = await callAi<{ message: string }>(
+    "coach/chat",
+    { message, context, history: history.slice(-20) },
+    signal,
+  );
+  if (typeof result.message !== "string" || !result.message.trim())
+    throw new Error("Invalid coach response.");
+  return result.message;
+}
+export async function getSmartNudge(
+  _progress: number,
+  daysLeft: number,
+  topicsRemaining: number,
+) {
+  return topicsRemaining
+    ? `Plan a focused block. ${daysLeft} days and ${topicsRemaining} topics remain.`
+    : "Use active recall to review your completed topics.";
+}
+export async function parseFile(file: File, signal?: AbortSignal) {
+  if (file.size > 10 * 1024 * 1024)
+    throw new Error("Choose a file under 10 MB.");
+  const extensions: Record<string, string> = {
+    txt: "text/plain",
+    pdf: "application/pdf",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    webp: "image/webp",
+  };
+  const mime = extensions[file.name.split(".").pop()?.toLowerCase() || ""];
+  if (!mime) throw new Error("Choose TXT, PDF, DOCX, PNG, JPEG, or WebP.");
+  const content =
+    mime === "text/plain"
+      ? await file.text()
+      : await new Promise<string>((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(String(r.result).split(",")[1]);
+          r.onerror = () => reject(new Error("Could not read the file."));
+          r.readAsDataURL(file);
+        });
+  return parseSyllabus(content, mime, signal);
 }

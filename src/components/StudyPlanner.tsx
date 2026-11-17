@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Calendar as CalendarIcon, 
-  Clock, 
-  CheckCircle2, 
-  ChevronLeft, 
+import { motion } from 'framer-motion';
+import {
+  Calendar as CalendarIcon,
+  Clock,
+  CheckCircle2,
+  ChevronLeft,
   ChevronRight,
   BookOpen,
   Target,
@@ -15,17 +15,17 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { auth } from '../lib/firebase';
-import { 
-  subscribeSyllabi, 
-  subscribeTopics, 
-  subscribeProgress, 
+import {
+  subscribeSyllabi,
+  subscribeTopics,
+  subscribeProgress,
   subscribePlan,
   savePlan,
   toggleTopicProgress,
@@ -93,7 +93,7 @@ export default function StudyPlanner({ onNavigate, searchQuery = '' }: StudyPlan
         new Date(activeSyllabus.examDate),
         activeSyllabus.dailyHours
       );
-      
+
       await savePlan(user.uid, activeSyllabus.id, newPlan);
     } catch (e) {
         console.error("Failed to generate plan", e);
@@ -121,7 +121,7 @@ export default function StudyPlanner({ onNavigate, searchQuery = '' }: StudyPlan
 
   if (syllabi.length === 0) {
     return (
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6"
@@ -135,7 +135,7 @@ export default function StudyPlanner({ onNavigate, searchQuery = '' }: StudyPlan
         <p className="text-white/40 mb-10 max-w-md font-medium leading-relaxed">
           The study planner requires an active syllabus to generate your personalized timeline.
         </p>
-        <Button 
+        <Button
           onClick={() => onNavigate('upload')}
           className="h-14 px-10 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold hover:shadow-lg hover:shadow-purple-500/20 transition-all"
         >
@@ -147,20 +147,21 @@ export default function StudyPlanner({ onNavigate, searchQuery = '' }: StudyPlan
 
   return (
     <div className="space-y-12 pb-20">
-      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
+      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8">
         <div className="space-y-3">
-          <motion.h1 
+          <p className="eyebrow text-violet-200/60">Your path to ready</p>
+          <motion.h1
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-white via-white to-white/40"
           >
-            Study Planner
+            Study planner
           </motion.h1>
           <div className="flex items-center gap-4">
-            <p className="text-white/40 font-semibold text-sm uppercase tracking-widest">Active Schedule:</p>
+            <p className="text-white/40 font-medium text-sm">Planning for</p>
             <DropdownMenu>
               <DropdownMenuTrigger className="h-auto p-0 text-lg font-bold hover:bg-transparent flex items-center gap-3 group border-none cursor-pointer bg-transparent">
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 border-b border-purple-500/20 group-hover:border-purple-500/50 transition-all pb-0.5">
+                <span className="text-violet-200 border-b border-violet-300/20 group-hover:border-violet-300/50 transition-all pb-0.5">
                   {activeSyllabus?.name || 'Select Syllabus'}
                 </span>
                 <div className="p-1 rounded-lg bg-white/5 border border-white/10 group-hover:bg-white/10 transition-colors">
@@ -169,7 +170,7 @@ export default function StudyPlanner({ onNavigate, searchQuery = '' }: StudyPlan
               </DropdownMenuTrigger>
               <DropdownMenuContent className="bg-[#0f0f13]/90 backdrop-blur-2xl border-white/5 rounded-2xl p-2 min-w-[280px] shadow-2xl z-50">
                 {syllabi.map((s) => (
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     key={s.id}
                     onClick={() => setActiveSyllabus(s)}
                     className="rounded-xl px-4 py-3 cursor-pointer hover:bg-white/5 flex items-center gap-3 transition-all mb-1 last:mb-0"
@@ -187,11 +188,11 @@ export default function StudyPlanner({ onNavigate, searchQuery = '' }: StudyPlan
           </div>
         </div>
 
-        <div className="flex items-center gap-2 bg-white/5 backdrop-blur-xl p-2 rounded-3xl border border-white/10 shadow-xl">
+        <div className="flex items-center gap-2 bg-white/5 backdrop-blur-xl p-1.5 rounded-xl border border-white/10 shadow-xl">
           <Button variant="ghost" size="icon" className="w-10 h-10 rounded-2xl hover:bg-white/5 text-white/40 hover:text-white" onClick={() => setSelectedDate(addDays(selectedDate, -1))}>
             <ChevronLeft className="w-5 h-5" />
           </Button>
-          <div className="px-6 font-bold tracking-tight text-xs uppercase tracking-[0.3em] text-white/80">{format(selectedDate, 'MMMM yyyy')}</div>
+          <div className="px-4 font-bold tracking-tight text-xs uppercase tracking-[0.2em] text-white/80">{format(selectedDate, 'MMMM yyyy')}</div>
           <Button variant="ghost" size="icon" className="w-10 h-10 rounded-2xl hover:bg-white/5 text-white/40 hover:text-white" onClick={() => setSelectedDate(addDays(selectedDate, 1))}>
             <ChevronRight className="w-5 h-5" />
           </Button>
@@ -210,20 +211,20 @@ export default function StudyPlanner({ onNavigate, searchQuery = '' }: StudyPlan
                 whileHover={{ y: -4, backgroundColor: isSelected ? 'rgba(255, 255, 255, 1)' : 'rgba(255, 255, 255, 0.08)' }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setSelectedDate(day)}
-                className={`flex flex-col items-center justify-center min-w-[100px] h-32 rounded-[2rem] transition-all duration-500 border ${
-                  isSelected 
-                    ? 'bg-white text-black border-white shadow-2xl shadow-white/10' 
+                className={`flex flex-col items-center justify-center min-w-[82px] h-24 rounded-xl transition-all duration-300 border ${
+                  isSelected
+                    ? 'bg-white text-black border-white shadow-2xl shadow-white/10'
                     : 'bg-white/5 text-white/30 border-white/5 hover:border-white/20'
                 }`}
               >
                 <span className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-2 ${isSelected ? 'text-black/60' : 'text-white/20'}`}>
                   {format(day, 'EEE')}
                 </span>
-                <span className="text-3xl font-black tracking-tight">{format(day, 'dd')}</span>
+                 <span className="text-2xl font-semibold tracking-tight">{format(day, 'dd')}</span>
                 {isToday && (
-                  <motion.div 
+                  <motion.div
                     layoutId="today-indicator"
-                    className={`w-1.5 h-1.5 rounded-full mt-3 ${isSelected ? 'bg-purple-600 shadow-[0_0_10px_rgba(147,51,234,0.8)]' : 'bg-white/40'}`} 
+                    className={`w-1.5 h-1.5 rounded-full mt-3 ${isSelected ? 'bg-purple-600 shadow-[0_0_10px_rgba(147,51,234,0.8)]' : 'bg-white/40'}`}
                   />
                 )}
               </motion.button>
@@ -236,38 +237,38 @@ export default function StudyPlanner({ onNavigate, searchQuery = '' }: StudyPlan
         <div className="lg:col-span-2 space-y-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center">
+               <div className="w-10 h-10 bg-violet-400/10 border border-violet-300/15 rounded-xl flex items-center justify-center">
                 <Activity className="w-6 h-6 text-purple-400" />
               </div>
               <div>
-                <h3 className="text-2xl font-bold tracking-tight">Today's Focus</h3>
-                <p className="text-sm text-white/40 font-medium">Prioritized sequence based on topic difficulty</p>
+                 <h3 className="text-2xl font-bold tracking-tight">Today’s focus</h3>
+                 <p className="text-sm text-white/40 font-medium">A prioritized sequence based on topic difficulty</p>
               </div>
             </div>
           </div>
 
           <div className="space-y-6 relative">
             <div className="absolute left-10 top-0 bottom-0 w-px bg-gradient-to-b from-purple-500/20 via-blue-500/20 to-transparent" />
-            
+
             {plan.length === 0 ? (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="py-24 text-center glass-card rounded-[3rem] border-none bg-white/[0.03] space-y-8"
+                 className="py-24 text-center workspace-card rounded-3xl space-y-8"
               >
                 <div className="w-20 h-20 bg-white/5 rounded-[2rem] flex items-center justify-center mx-auto border border-white/10">
                   <Sparkles className="w-10 h-10 text-white/20" />
                 </div>
                 <div className="space-y-2">
-                  <p className="text-xl font-bold">No High-Performance Roadmap</p>
-                  <p className="text-white/30 font-medium max-w-sm mx-auto">Generate a custom schedule optimized for your cognitive load and timeline.</p>
+                   <p className="text-xl font-bold">Your roadmap is one click away</p>
+                   <p className="text-white/30 font-medium max-w-sm mx-auto">Generate a realistic sequence based on your deadline, available hours, and topic difficulty.</p>
                 </div>
-                <Button 
+                <Button
                   onClick={handleGeneratePlan}
                   disabled={isGenerating}
                   className="h-14 px-10 rounded-2xl bg-white text-black font-black hover:bg-zinc-100 hover:scale-[1.03] transition-all shadow-2xl"
                 >
-                  {isGenerating ? "Analyzing Dynamics..." : 'Generate AI Roadmap'}
+                   {isGenerating ? "Building your plan..." : 'Generate my roadmap'}
                 </Button>
               </motion.div>
             ) : todayTopics.length > 0 ? (
@@ -275,27 +276,27 @@ export default function StudyPlanner({ onNavigate, searchQuery = '' }: StudyPlan
                 {todayTopics.map((topic, i) => {
                   const topicProgress = progress.find(p => p.topicId === topic.id);
                   const isCompleted = topicProgress?.status === 'Completed';
-                  
+
                   return (
                     <motion.div
                       key={topic.id}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.1 }}
-                      className={`relative flex gap-10 p-8 rounded-[2.5rem] transition-all duration-500 group border h-full ${
-                        isCompleted 
-                          ? 'bg-gradient-to-br from-green-500/5 to-transparent border-green-500/10' 
+                       className={`relative flex gap-7 p-6 rounded-2xl transition-all duration-300 group border h-full ${
+                        isCompleted
+                          ? 'bg-gradient-to-br from-green-500/5 to-transparent border-green-500/10'
                           : 'bg-white/[0.03] border-white/10 hover:bg-white/[0.06] hover:border-white/20'
                       }`}
                     >
                       <div className="relative z-10 scale-[1.2]">
-                        <motion.button 
+                        <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
                           onClick={() => handleToggleTopic(topic.id)}
                           className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 border ${
-                            isCompleted 
-                              ? 'bg-green-500 text-black border-green-500 shadow-xl shadow-green-500/20' 
+                            isCompleted
+                              ? 'bg-green-500 text-black border-green-500 shadow-xl shadow-green-500/20'
                               : 'bg-white/5 text-white/20 border-white/10 group-hover:border-white/30 group-hover:bg-white/10'
                           }`}
                         >
@@ -306,7 +307,7 @@ export default function StudyPlanner({ onNavigate, searchQuery = '' }: StudyPlan
                       <div className="flex-1 space-y-4">
                         <div className="flex items-start justify-between">
                           <div className="space-y-1">
-                            <h4 className={`text-2xl font-bold tracking-tight transition-all duration-500 ${isCompleted ? 'text-white/20 line-through' : 'text-white'}`}>
+                             <h4 className={`text-xl font-bold tracking-tight transition-all duration-500 ${isCompleted ? 'text-white/20 line-through' : 'text-white'}`}>
                               {topic.title}
                             </h4>
                             <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-purple-400/60 transition-all group-hover:text-purple-400">
@@ -321,10 +322,10 @@ export default function StudyPlanner({ onNavigate, searchQuery = '' }: StudyPlan
                             {topic.difficulty}
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center gap-8 pt-2">
                           <div className="flex items-center gap-2.5 text-xs text-white/40 font-bold group-hover:text-white/60 transition-colors">
-                            <Clock className="w-4 h-4 text-purple-500/50" /> {topic.estimatedHours}h SESSION
+                            <Clock className="w-4 h-4 text-purple-500/50" /> {((currentDayPlan?.allocations?.filter(a=>a.topicId===topic.id).reduce((n,a)=>n+a.minutes,0) ?? topic.estimatedHours*60)/60).toFixed(1)}h SESSION
                           </div>
                           <div className="flex items-center gap-2.5 text-xs text-white/40 font-bold group-hover:text-white/60 transition-colors">
                             <BookOpen className="w-4 h-4 text-blue-500/50" /> SUBJECT EXPERTISE
@@ -344,12 +345,12 @@ export default function StudyPlanner({ onNavigate, searchQuery = '' }: StudyPlan
         </div>
 
         <div className="space-y-8">
-          <Card className="glass-card border-none p-10 bg-white/5 rounded-[3rem] space-y-10">
+           <Card className="workspace-card rounded-2xl p-6 space-y-7">
             <div className="space-y-2">
-              <h3 className="text-2xl font-bold tracking-tight">Timeline Engine</h3>
-              <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">Global progress metrics</p>
+               <p className="eyebrow text-violet-200/55 mb-2">At a glance</p><h3 className="text-2xl font-bold tracking-tight">Timeline overview</h3>
+               <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">Your progress metrics</p>
             </div>
-            
+
             <div className="space-y-8">
               {[
                 { label: 'Projected Topics', value: topics.length, icon: BookOpen, color: 'text-blue-400', bg: 'bg-blue-500/10' },
@@ -369,17 +370,17 @@ export default function StudyPlanner({ onNavigate, searchQuery = '' }: StudyPlan
             </div>
           </Card>
 
-          <Card className="glass-card border-none p-10 bg-gradient-to-br from-purple-600/10 to-transparent rounded-[3rem] relative overflow-hidden group">
+           <Card className="workspace-card border-none p-7 bg-gradient-to-br from-purple-600/10 to-transparent rounded-2xl relative overflow-hidden group">
             <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-purple-500/10 blur-[80px] group-hover:bg-purple-500/20 transition-all duration-1000" />
             <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-8 shadow-2xl shadow-white/5">
               <Target className="w-8 h-8 text-black" />
             </div>
-            <h3 className="text-3xl font-black tracking-tighter mb-4">Exam Horizon</h3>
+             <p className="eyebrow text-violet-100/55 mb-2">Milestone check</p><h3 className="text-2xl font-semibold tracking-tight mb-4">Exam horizon</h3>
             <p className="text-white/40 text-sm font-medium mb-10 leading-relaxed">
               You are currently <span className="text-white/80 font-bold">{activeSyllabus?.examDate ? differenceInDays(new Date(activeSyllabus.examDate), new Date()) : '??'} days</span> away from your exam. AI suggests increasing velocity by 12% to ensure mastery.
             </p>
             <Button className="w-full h-14 rounded-2xl bg-white/5 hover:bg-white/10 text-white border border-white/10 font-bold text-[10px] uppercase tracking-widest transition-all">
-              Calibrate Flow
+               Review my plan
             </Button>
           </Card>
         </div>

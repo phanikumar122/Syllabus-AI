@@ -16,7 +16,8 @@ import {
   query,
   orderBy,
   onSnapshot,
-  addDoc,
+  getDocs,
+  writeBatch,
   setDoc,
   deleteDoc,
   doc,
@@ -25,7 +26,7 @@ import {
   type QuerySnapshot,
   type DocumentData,
 } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db } from '../lib/cloudFirebase';
 import type { DayPlan } from './plannerService';
 import type { ExtractedTopic } from './geminiService';
 
@@ -96,35 +97,25 @@ export async function createSyllabus(
   data: { name: string; examDate: string; dailyHours: number },
   topics: ExtractedTopic[]
 ): Promise<string> {
-  const syllabusRef = await addDoc(collection(db, syllabiPath(uid)), {
-    ...data,
-    status: 'Active',
-    createdAt: serverTimestamp(),
+  if(!data.name.trim()||data.name.length>160||!/^\d{4}-\d{2}-\d{2}$/.test(data.examDate)||data.dailyHours<.5||data.dailyHours>12||topics.length>200)throw new Error('Invalid syllabus input.');
+  const syllabusRef=doc(collection(db,syllabiPath(uid)));
+  const batch=writeBatch(db);
+  batch.set(syllabusRef,{...data,status:'Active',createdAt:serverTimestamp()});
+  topics.forEach(topic=>{
+    if(!topic.title.trim()||topic.title.length>200||!Number.isFinite(topic.estimatedHours)||topic.estimatedHours<1/6||topic.estimatedHours>24)throw new Error('Invalid topic effort.');
+    batch.set(doc(collection(db,topicsPath(uid,syllabusRef.id))),{...topic,createdAt:serverTimestamp()});
   });
-
-  // Write all topics in parallel
-  await Promise.all(
-    topics.map(topic =>
-      addDoc(collection(db, topicsPath(uid, syllabusRef.id)), {
-        ...topic,
-        createdAt: serverTimestamp(),
-      })
-    )
-  );
-
-  return syllabusRef.id;
+  await batch.commit();return syllabusRef.id;
 }
 
-/**
- * Permanently delete a syllabus document.
- * Note: sub-collections (topics, progress, plans) are NOT auto-deleted by the
- * client SDK. For production, use a Cloud Function. For now, the orphaned docs
- * will just be unreachable.
- */
-export async function deleteSyllabus(uid: string, syllabusId: string): Promise<void> {
-  await deleteDoc(doc(db, syllabiPath(uid), syllabusId));
+/** Remove the known legacy subcollections before their parent document. */
+export async function deleteSyllabus(uid:string,syllabusId:string):Promise<void>{
+  for(const path of [topicsPath(uid,syllabusId),progressPath(uid,syllabusId),plansPath(uid,syllabusId)]){
+    const records=await getDocs(collection(db,path));
+    for(let i=0;i<records.docs.length;i+=450){const batch=writeBatch(db);records.docs.slice(i,i+450).forEach(d=>batch.delete(d.ref));await batch.commit();}
+  }
+  await deleteDoc(doc(db,syllabiPath(uid),syllabusId));
 }
-
 // ─── Topics ──────────────────────────────────────────────────────────────────
 
 /**

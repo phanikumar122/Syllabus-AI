@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   TrendingUp,
   Clock,
@@ -12,6 +12,8 @@ import {
   ChevronDown,
   ArrowUpRight,
   Upload,
+  TimerReset,
+  CircleCheck,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -122,6 +124,7 @@ export default function Dashboard({ onNavigate, searchQuery = '' }: DashboardPro
   const daysLeft = activeSyllabus
     ? Math.max(0, differenceInDays(new Date(activeSyllabus.examDate), new Date()))
     : 0;
+  const nextTopic = topics.find(topic => progress.find(item => item.topicId === topic.id)?.status !== 'Completed') ?? topics[0];
 
   // ── Loading skeleton ───────────────────────────────────────────────────────
   if (loading) {
@@ -152,11 +155,11 @@ export default function Dashboard({ onNavigate, searchQuery = '' }: DashboardPro
         <div className="w-24 h-24 bg-white/5 backdrop-blur-3xl rounded-[2.5rem] border border-white/10 flex items-center justify-center mb-8 shadow-2xl">
           <Target className="w-10 h-10 text-purple-400" />
         </div>
-        <h2 className="text-4xl font-bold mb-4 tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-white to-white/40">
-          No Syllabus Found
-        </h2>
-        <p className="text-white/40 mb-10 max-w-md font-medium leading-relaxed">
-          Unlock your potential by uploading a syllabus. Our AI will break it down into actionable study blocks.
+          <h2 className="text-4xl font-bold mb-4 tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-white to-white/40">
+           Start with your first syllabus
+          </h2>
+          <p className="text-white/40 mb-10 max-w-md font-medium leading-relaxed">
+           Upload your course material and we’ll turn it into a clear sequence of priorities, sessions, and milestones.
         </p>
         {/* FIX: was a dead button with no onClick */}
         <Button
@@ -164,7 +167,7 @@ export default function Dashboard({ onNavigate, searchQuery = '' }: DashboardPro
           className="h-14 px-10 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold hover:shadow-lg hover:shadow-purple-500/20 hover:scale-[1.02] transition-all flex items-center gap-3"
         >
           <Upload className="w-5 h-5" />
-          Upload Your First Syllabus
+           Upload a syllabus
         </Button>
       </motion.div>
     );
@@ -172,46 +175,47 @@ export default function Dashboard({ onNavigate, searchQuery = '' }: DashboardPro
 
   const stats = [
     {
-      title: 'Current Progress',
+      title: 'Progress',
       value: `${progressPercent}%`,
       icon: TrendingUp,
-      sub: `${completedCount} of ${topics.length} topics mastered`,
-      color: 'blue',
+      sub: `${completedCount} of ${topics.length} topics complete`,
+      color: 'violet',
       progress: progressPercent,
     },
     {
-      title: 'Days Remaining',
+      title: 'Exam horizon',
       value: daysLeft,
       icon: Clock,
-      sub: 'Time until exam milestone',
-      color: 'purple',
+      sub: 'days until your milestone',
+      color: 'amber',
     },
     {
-      title: 'Study Velocity',
+      title: 'Daily pace',
       value: `${activeSyllabus?.dailyHours ?? 0}h/day`,
       icon: Zap,
-      sub: 'Calculated optimal pace',
-      color: 'cyan',
+      sub: 'your planned focus window',
+      color: 'mint',
     },
   ];
 
   return (
     <div className="space-y-12 pb-20">
       {/* ── Header ────────────────────────────────────────────────────────── */}
-      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
+      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8">
         <div className="space-y-3">
+          <p className="eyebrow text-violet-200/60">Your study cockpit</p>
           <motion.h1
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-white via-white to-white/40"
           >
-            Dashboard
+            Good morning, {user?.displayName?.split(' ')[0] || 'there'}.
           </motion.h1>
           <div className="flex items-center gap-4">
-            <p className="text-white/40 font-semibold text-sm uppercase tracking-widest">Active Focus:</p>
+            <p className="text-white/40 font-semibold text-sm">Working toward</p>
             <DropdownMenu>
               <DropdownMenuTrigger className="h-auto p-0 text-lg font-bold hover:bg-transparent flex items-center gap-3 group border-none cursor-pointer bg-transparent">
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 border-b border-purple-500/20 group-hover:border-purple-500/50 transition-all pb-0.5">
+                <span className="text-violet-200 border-b border-violet-300/20 group-hover:border-violet-300/50 transition-all pb-0.5">
                   {activeSyllabus?.name ?? 'Select Syllabus'}
                 </span>
                 <div className="p-1 rounded-lg bg-white/5 border border-white/10 group-hover:bg-white/10 transition-colors">
@@ -238,25 +242,48 @@ export default function Dashboard({ onNavigate, searchQuery = '' }: DashboardPro
           </div>
         </div>
 
-        {/* AI Nudge */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          whileHover={{ y: -4 }}
-          className="flex items-center gap-4 bg-white/5 backdrop-blur-xl px-6 py-4 rounded-3xl border border-white/10 shadow-xl max-w-md"
-        >
-          <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/20 shrink-0">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-400/80">AI Insight</span>
-            <span className="text-sm font-semibold text-white/90 leading-snug">{nudge}</span>
-          </div>
-        </motion.div>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[.035] border border-white/[.07]">
+          <div className="w-2 h-2 rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,.8)]" />
+          <span className="text-[10px] font-bold uppercase tracking-[.16em] text-white/45">Plan is live</span>
+        </div>
       </header>
 
+      {/* ── Next best action ─────────────────────────────────────────────── */}
+      <motion.section
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: .55 }}
+        className="focus-card rounded-3xl p-7 md:p-9"
+      >
+        <div className="relative z-10 grid lg:grid-cols-[1fr_220px] gap-8 items-center">
+          <div>
+            <div className="flex items-center gap-2 mb-5">
+              <div className="w-7 h-7 rounded-lg bg-amber-300/10 border border-amber-200/20 flex items-center justify-center">
+                <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+              </div>
+              <p className="eyebrow text-amber-100/65">Next best action</p>
+            </div>
+            <p className="text-sm text-white/45 mb-2">A focused session for today</p>
+            <h2 className="text-3xl md:text-4xl font-semibold tracking-[-.055em] max-w-2xl">
+              {nextTopic?.title || 'Generate your first study plan'}
+            </h2>
+            <p className="text-sm text-white/48 mt-4 max-w-xl leading-relaxed">{nudge}</p>
+            <div className="flex flex-wrap items-center gap-3 mt-7">
+              {nextTopic && <span className="px-3 py-1.5 rounded-lg bg-white/[.07] border border-white/[.08] text-[10px] font-bold uppercase tracking-[.14em] text-white/60">{nextTopic.difficulty} focus</span>}
+              {nextTopic && <span className="flex items-center gap-1.5 text-xs text-white/45"><TimerReset className="w-3.5 h-3.5 text-violet-200/70" /> {nextTopic.estimatedHours}h session</span>}
+              <Button onClick={() => onNavigate('planner')} className="h-10 px-4 rounded-xl bg-white text-black text-xs font-black hover:bg-violet-50 transition-colors ml-0 sm:ml-2">
+                Open today’s plan <ArrowUpRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </div>
+          <div className="hidden lg:flex justify-center items-center min-h-[170px]">
+            <div className="focus-orb" aria-hidden="true" />
+          </div>
+        </div>
+      </motion.section>
+
       {/* ── Stats Grid ────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {stats.map((stat, i) => (
           <motion.div
             key={stat.title}
@@ -264,51 +291,51 @@ export default function Dashboard({ onNavigate, searchQuery = '' }: DashboardPro
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1, duration: 0.5 }}
           >
-            <Card className="glass-card border-none p-1 bg-white/5 hover:bg-white/[0.08] transition-all rounded-[2.5rem] group relative overflow-hidden h-full">
-              <div className="p-7 space-y-6">
+            <Card className="workspace-card rounded-2xl p-1 hover:bg-white/[0.05] transition-all group relative overflow-hidden h-full">
+              <div className="p-5 space-y-5">
                 <div className="flex items-center justify-between">
-                  <div className={`p-4 rounded-2xl bg-gradient-to-br border flex items-center justify-center shadow-inner ${
-                    stat.color === 'blue' ? 'from-blue-600/20 to-cyan-600/20 border-blue-500/20' :
-                    stat.color === 'purple' ? 'from-purple-600/20 to-pink-600/20 border-purple-500/20' :
-                    'from-cyan-600/20 to-teal-600/20 border-cyan-500/20'
+                  <div className={`p-3 rounded-xl bg-gradient-to-br border flex items-center justify-center shadow-inner ${
+                    stat.color === 'violet' ? 'from-violet-400/20 to-indigo-600/20 border-violet-300/20' :
+                    stat.color === 'amber' ? 'from-amber-300/20 to-orange-600/20 border-amber-300/20' :
+                    'from-emerald-300/20 to-teal-600/20 border-emerald-300/20'
                   }`}>
                     <stat.icon className={`w-6 h-6 ${
-                      stat.color === 'blue' ? 'text-blue-400' :
-                      stat.color === 'purple' ? 'text-purple-400' :
-                      'text-cyan-400'
+                      stat.color === 'violet' ? 'text-violet-200' :
+                      stat.color === 'amber' ? 'text-amber-200' :
+                      'text-emerald-200'
                     }`} />
                   </div>
-                  <div className="px-3 py-1.5 rounded-full bg-white/5 border border-white/5 text-[10px] font-bold uppercase tracking-widest text-white/30">
-                    Live
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-white/25">
+                    Updated now
                   </div>
                 </div>
 
                 <div className="space-y-1">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-5xl font-bold tracking-tighter text-white">{stat.value}</span>
-                    <ArrowUpRight className="w-5 h-5 text-green-400/50 -translate-y-2" />
+                    <span className="metric-number text-white">{stat.value}</span>
+                    <ArrowUpRight className="w-4 h-4 text-emerald-300/55 -translate-y-2" />
                   </div>
-                  <p className="text-sm font-bold text-white/40 uppercase tracking-widest">{stat.title}</p>
+                  <p className="text-xs font-bold text-white/42 uppercase tracking-[.14em]">{stat.title}</p>
                 </div>
 
                 {stat.progress !== undefined ? (
                   <div className="space-y-4">
-                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${stat.progress}%` }}
                         transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }}
-                        className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 shadow-glow-purple"
+                        className="h-full bg-gradient-to-r from-violet-400 to-indigo-300 shadow-glow-purple"
                       />
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-[10px] uppercase font-bold tracking-widest text-white/20">{stat.sub}</span>
+                      <span className="text-[10px] uppercase font-bold tracking-widest text-white/22">{stat.sub}</span>
                       <span className="text-[10px] font-bold text-white/40">{stat.progress}%</span>
                     </div>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 pt-2">
-                    <TrendingUp className="w-4 h-4 text-green-400/40" />
+                    <CircleCheck className="w-4 h-4 text-emerald-300/50" />
                     <p className="text-xs text-white/40 font-medium">{stat.sub}</p>
                   </div>
                 )}
@@ -319,7 +346,7 @@ export default function Dashboard({ onNavigate, searchQuery = '' }: DashboardPro
       </div>
 
       {/* ── Chart + Topics ────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
         {/* Chart */}
         <motion.div
           initial={{ opacity: 0, scale: 0.98 }}
@@ -327,19 +354,19 @@ export default function Dashboard({ onNavigate, searchQuery = '' }: DashboardPro
           transition={{ delay: 0.3 }}
           className="xl:col-span-2"
         >
-          <Card className="glass-card border-none p-10 bg-white/5 rounded-[3rem] h-full">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12 gap-6">
+          <Card className="workspace-card rounded-2xl p-6 md:p-7 h-full">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-6">
               <div className="space-y-2">
-                <h3 className="text-3xl font-bold tracking-tight">Focus Trends</h3>
+                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-violet-300" /><h3 className="text-xl font-bold tracking-tight">Focus trends</h3></div>
                 <p className="text-sm text-white/40 font-medium">Study hours over the last 7 sessions</p>
               </div>
               <div className="flex items-center gap-3 bg-white/5 border border-white/10 p-2 rounded-2xl">
-                <Button variant="ghost" size="sm" className="h-9 px-4 rounded-xl text-[10px] font-bold uppercase tracking-widest text-white/80 bg-white/5 border border-white/10">Hours</Button>
-                <Button variant="ghost" size="sm" className="h-9 px-4 rounded-xl text-[10px] font-bold uppercase tracking-widest text-white/30 hover:text-white">Topics</Button>
+                <Button variant="ghost" size="sm" className="h-8 px-3 rounded-lg text-[10px] font-bold uppercase tracking-widest text-white/80 bg-white/5 border border-white/10">Hours</Button>
+                <Button variant="ghost" size="sm" className="h-8 px-3 rounded-lg text-[10px] font-bold uppercase tracking-widest text-white/30 hover:text-white">Topics</Button>
               </div>
             </div>
 
-            <div className="h-[360px] w-full">
+            <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData}>
                   <defs>
@@ -364,7 +391,7 @@ export default function Dashboard({ onNavigate, searchQuery = '' }: DashboardPro
                     itemStyle={{ color: '#fff', fontWeight: 800, fontSize: '14px' }}
                     labelStyle={{ color: 'rgba(255,255,255,0.4)', marginBottom: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '10px' }}
                   />
-                  <Area type="monotone" dataKey="hours" stroke="#8b5cf6" strokeWidth={4} fillOpacity={1} fill="url(#chartGradient)" animationDuration={2500} />
+                  <Area type="monotone" dataKey="hours" stroke="#9b8afb" strokeWidth={3} fillOpacity={1} fill="url(#chartGradient)" animationDuration={850} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -373,9 +400,9 @@ export default function Dashboard({ onNavigate, searchQuery = '' }: DashboardPro
 
         {/* Topics sidebar */}
         <div className="space-y-6">
-          <Card className="glass-card border-none p-8 bg-white/5 rounded-[2.5rem] shadow-xl">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-bold tracking-tight">Critical Topics</h3>
+          <Card className="workspace-card rounded-2xl p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-6">
+              <div><p className="eyebrow text-rose-100/55 mb-2">Keep an eye on</p><h3 className="text-xl font-bold tracking-tight">Critical topics</h3></div>
               <button
                 onClick={() => onNavigate('planner')}
                 className="p-2 rounded-xl bg-white/5 cursor-pointer hover:bg-white/10 transition-colors"
@@ -395,7 +422,7 @@ export default function Dashboard({ onNavigate, searchQuery = '' }: DashboardPro
                   <motion.div
                     key={topic.id}
                     whileHover={{ scale: 1.02, x: 4 }}
-                    className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-purple-500/20 hover:bg-white/[0.06] transition-all group"
+                    className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.03] border border-white/5 hover:border-purple-500/20 hover:bg-white/[0.06] transition-all group"
                   >
                     <div className="flex items-center gap-4">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all shadow-inner ${
@@ -427,12 +454,12 @@ export default function Dashboard({ onNavigate, searchQuery = '' }: DashboardPro
             </div>
           </Card>
 
-          <Card className="glass-card border-none p-8 bg-gradient-to-br from-blue-600/10 via-transparent to-transparent rounded-[2.5rem] relative overflow-hidden group">
+          <Card className="workspace-card border-none p-6 bg-gradient-to-br from-violet-600/10 via-transparent to-transparent rounded-2xl relative overflow-hidden group">
             <div className="absolute -right-4 -bottom-4 w-32 h-32 bg-blue-500/10 blur-[60px] group-hover:bg-blue-500/20 transition-all duration-700" />
             <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-blue-500/20">
               <ActivityIcon className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-xl font-bold tracking-tight mb-2">Study Sprints</h3>
+            <p className="eyebrow text-violet-100/55 mb-2">A small optimization</p><h3 className="text-xl font-bold tracking-tight mb-2">Study sprints</h3>
             <p className="text-white/40 text-[13px] font-medium mb-6 leading-relaxed">
               Your focus peaks between <span className="text-white/80">7 PM and 10 PM</span>. Reserve those windows for Hard concepts.
             </p>
@@ -440,7 +467,7 @@ export default function Dashboard({ onNavigate, searchQuery = '' }: DashboardPro
               onClick={() => onNavigate('planner')}
               className="w-full h-12 rounded-2xl bg-white/5 hover:bg-white/10 text-white border border-white/10 font-bold text-[10px] uppercase tracking-[0.2em] transition-all"
             >
-              Open Planner
+              Open planner
             </Button>
           </Card>
         </div>
